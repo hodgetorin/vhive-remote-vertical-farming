@@ -1,5 +1,4 @@
 # greenbox
 
-This code was developed in KivyMD and Python.
-
-It is simply a framework for the GUI for an application to control the movement of growing boards and lighting boards in the V-hive system.
+1/26/21
+This is a framework for the GUI of an application to control the movement of growing boards and lighting boards in the V-hive system.
