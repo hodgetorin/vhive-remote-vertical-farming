@@ -1,0 +1,69 @@
+import tkinter as tk
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+HEIGHT = 450
+WIDTH = 450
+
+
+def Graph():
+    df = pd.read_csv('sensor_output.csv', names=["Date", "TempC", "TempF", "RH"],index_col=0,parse_dates = True)
+    temprh = df.plot(use_index=False)
+    temprh.set_xlabel("time (minutes)")
+    plt.show()
+    
+def printLatest():
+    df = pd.read_csv('sensor_output.csv', names=["Date", "Temp (C)", "Temp (F)", "RH (%)"],index_col=0,parse_dates = True)
+    label_current = tk.Label(lower_frame, text=df.tail(1))
+    label_current.pack()
+    
+def ourCommand():
+    cmd_label = Label(root, text="Placeholder").pack()
+
+root = tk.Tk()
+root.title("V-Hive Green Box")
+
+menu_bar = tk.Menu(root)
+root.config(menu=menu_bar)
+
+main_menu = tk.Menu(menu_bar)
+menu_bar.add_cascade(label="Go to...", menu = main_menu)
+main_menu.add_command(label="Sensors", command = ourCommand)
+main_menu.add_separator()
+main_menu.add_command(label="Board Control", command = ourCommand)
+main_menu.add_command(label="Pump Control", command = ourCommand)
+main_menu.add_command(label="Light Control", command = ourCommand)
+main_menu.add_command(label="Webcam", command = ourCommand)
+
+
+
+#ua_logo = tk.PhotoImage(file="ua_logo.jpg")
+#logo_label = tk.Label(root, image = ua_logo)
+#logo_label.place(x=0,y=0,relwidth=1,relheight=1)
+
+canvas = tk.Canvas(root, height = HEIGHT, width=WIDTH)
+canvas.pack()
+
+frame = tk.Frame(root, bg = "#D4FFCD", bd= 5)
+frame.place(relx=0.5,rely=0.1,relwidth = 0.75,relheight = 0.1,anchor="n")
+
+#entry = tk.Entry(frame, font = 40)
+#entry.place(relwidth = 0.65,relheight = 1)
+
+button_graph = tk.Button(frame, text = "draw graph", command = Graph)
+button_graph.place(relx=0.55,relwidth = 0.3,relheight = 1)
+
+button_grab_current = tk.Button(frame, text = "get current", command = printLatest)
+button_grab_current.place(relx=0.15,relwidth = 0.3,relheight = 1)
+
+lower_frame = tk.Frame(root, bg = "#D4FFCD", bd= 10)
+lower_frame.place(relx=0.5,rely=0.25,relwidth="0.75", relheight = 0.6, anchor = 'n')
+
+label = tk.Label(lower_frame, bg = "white")
+label.place(relwidth = 1,relheight = 1)
+
+
+
+
+root.mainloop()
