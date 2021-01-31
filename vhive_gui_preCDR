@@ -1,3 +1,11 @@
+#################################################################
+# This is the sloppy version of the Sensor Data window GUI.     #
+# It reads the file "sensor_output.csv" included in repository  #
+# Graphing with pandas via Graph() and retrieving the last      #
+# data entry with printLatest()                                 #
+#################################################################
+
+
 import tkinter as tk
 import numpy as np
 import pandas as pd
