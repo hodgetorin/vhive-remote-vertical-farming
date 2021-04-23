@@ -17,6 +17,7 @@ if "tkinter" not in sys.modules:
 import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
+from datetime import datetime, time
 
 # data packages for Sensors page:
 import numpy as np
@@ -27,6 +28,46 @@ import pandas as pd
 ft1 = ('consolas', 13)
 ft2 = ('consolas', 18)
 
+# will eventually be put into the light update button callback, this is just for testing
+from datetime import timedelta
+dt = timedelta(seconds = 1)
+light_start = (datetime.now() + dt).time()
+light_end = ((datetime.now() + dt) + dt).time()
+
+light_on = False
+
+def update(window):
+
+    global light_on
+    global updateHandle
+    
+    #temporary
+    global light_start
+    global light_end
+    
+    time = datetime.now().time();
+    
+    if (time > light_start and time < light_end):
+        if (not light_on):
+            print("lights on")
+            light_on = True
+    elif (light_on):
+        print("lights off")
+        light_on = False
+        
+        #temporary code for testing
+        dt = timedelta(seconds = 1)
+        light_start = (datetime.now() + dt).time()
+        light_end = ((datetime.now() + dt) + dt).time()
+        
+    updateHandle = window.after(10, update, window)
+    
+def closeWindow(window):
+    
+    global updateHandle
+    
+    window.after_cancel(updateHandle)
+    window.destroy()
 
 # # Sensor Page:
 
@@ -36,10 +77,10 @@ ft2 = ('consolas', 18)
 def sensors():
     
     def closeSP():
-        sp.destroy()
+        closeWindow(sp)
         
     def homeSP():
-        sp.destroy()
+        closeWindow(sp)
         home()
         
     def Graph():
@@ -88,6 +129,7 @@ def sensors():
     quit_bt = Button(sp,width=10,height=2,fg="white", bg="#5b9aa0", border=0, font = ft1, text="Q U I T", command = closeSP).place(x=625,y=325)
     # command = end program
 
+    sp.after(0, update, sp)
     sp.mainloop()
 
 
@@ -103,10 +145,10 @@ def pumps():
     air_state = "OFF"; nute_state = "OFF"
     
     def closePP():
-        pp.destroy()
+        closeWindow(pp)
     
     def homePP():
-        pp.destroy()
+        closeWindow(pp)
         home()
         
     def areYouSure(air_state):
@@ -156,6 +198,7 @@ def pumps():
     home_bt = Button(pp,width=10,height=2, fg="white", bg="#5b9aa0", border=0, font=ft1, text="H O M E", command=homePP)
     home_bt.place(x=640,y=340)
 
+    pp.after(0, update, pp)
     pp.mainloop()
 
 
@@ -171,9 +214,9 @@ def lights():
         
     # lights
     def closeLP():
-        lp.destroy()
+        closeWindow(lp)
     def homeLP():
-        lp.destroy()
+        closeWindow(lp)
         home()
         
     lp=Tk()
@@ -281,6 +324,7 @@ def lights():
     help_lpt.config(font = ft1)
     help_lpt.place(x=690,y=60)
 
+    lp.after(0, update, lp)
     lp.mainloop()
 
 
@@ -292,10 +336,10 @@ def lights():
 def vision():   
     
     def closeVP():
-        vp.destroy()
+        closeWindow(vp)
         
     def homeVP():
-        vp.destroy()
+        closeWindow(vp)
         home()
     
     vp=Tk()
@@ -317,6 +361,7 @@ def vision():
     home_bt = Button(vp,width=10,height=2,fg="white", bg="#5b9aa0", border=0, font = ft1,text="H O M E", command = homeVP)
     home_bt.place(x=640,y=340)
 
+    vp.after(0, update, vp)
     vp.mainloop()
 
 
@@ -336,10 +381,10 @@ def vision():
 def boards():
     
     def closeBP():
-        bp.destroy()    
+        closeWindow(bp)
     
     def homeBP():
-        bp.destroy()
+        closeWindow(bp)
         home()
     
     def boardInstructions():
@@ -433,6 +478,7 @@ def boards():
     emc_bt.config(font = ft1)
     emc_bt.place(x=560,y=60)
 
+    bp.after(0, update, bp)
     bp.mainloop()
 
 
@@ -444,31 +490,31 @@ def boards():
 def home():
     
     def closeCP():
-        cp.destroy() 
+        closeWindow(cp)
     
     def logout():
-        cp.destroy()
+        closeWindow(cp)
         login()
 
     # navigating from the control panel (home page)
     def cpLights():
-        cp.destroy()
+        closeWindow(cp)
         lights()
 
     def cpSensors():
-        cp.destroy()
+        closeWindow(cp)
         sensors()
 
     def cpBoards():
-        cp.destroy()
+        closeWindow(cp)
         boards()
 
     def cpVision():
-        cp.destroy()
+        closeWindow(cp)
         vision()
 
     def cpPumps():
-        cp.destroy()
+        closeWindow(cp)
         pumps()
     
     cp=Tk()
@@ -509,6 +555,7 @@ def home():
     quit_bt = Button(cp, width=10, height=2, fg="white", bg="#5b9aa0", border=0, text="Q U I T", command = closeCP)
     quit_bt.place(x=660, y=350)
    
+    cp.after(0, update, cp)
     cp.mainloop()
     
 
@@ -528,8 +575,8 @@ def login():
         if e1.get() == '21017' and e2.get() == 'admin':
             messagebox.showinfo("  Welcome   ", " Login Successful")
             # convert the next two lines to their own function, developing into
-            # the rest of the program. 
-            window.destroy()
+            # the rest of the program.
+            closeWindow(window)
             home()
         else:
             messagebox.showinfo("Login failed", "    Please try again or contact administrator   ")
@@ -576,6 +623,7 @@ def login():
 
     Button(window,width=20,height=2,fg="white", bg="#5b9aa0", border=0, command=cmd, text="L O G I N").place(x=100,y=390)
 
+    window.after(0, update, window)
     window.mainloop()
 
 login()
