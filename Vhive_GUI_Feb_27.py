@@ -28,37 +28,28 @@ import pandas as pd
 ft1 = ('consolas', 13)
 ft2 = ('consolas', 18)
 
-# will eventually be put into the light update button callback, this is just for testing
-from datetime import timedelta
-dt = timedelta(seconds = 1)
-light_start = (datetime.now() + dt).time()
-light_end = ((datetime.now() + dt) + dt).time()
-
 light_on = False
+
+light_start = time(8)
+light_end = time(22)
 
 def update(window):
 
     global light_on
     global updateHandle
     
-    #temporary
     global light_start
     global light_end
     
-    time = datetime.now().time();
+    current_time = datetime.now().time();
     
-    if (time > light_start and time < light_end):
+    if ((light_start <= light_end and current_time > light_start and current_time < light_end) or (light_start > light_end and current_time > light_start or current_time < light_end)):
         if (not light_on):
             print("lights on")
             light_on = True
     elif (light_on):
         print("lights off")
         light_on = False
-        
-        #temporary code for testing
-        dt = timedelta(seconds = 1)
-        light_start = (datetime.now() + dt).time()
-        light_end = ((datetime.now() + dt) + dt).time()
         
     updateHandle = window.after(10, update, window)
     
@@ -211,14 +202,43 @@ def pumps():
 
 
 def lights():
-        
+    
+    global light_start
+    global light_end
+    
     # lights
     def closeLP():
         closeWindow(lp)
     def homeLP():
         closeWindow(lp)
         home()
+    def setTimes():
+    
+        global light_start
+        global light_end
         
+        try:
+            light_start = time.fromisoformat(start_v.get())
+            light_end = time.fromisoformat(off_v.get())
+        except ValueError as e:
+            messagebox.showwarning("Invalid Value", e)
+        
+        cur_time.config(text = "on: " + light_start.isoformat() + " off: " + light_end.isoformat())
+
+
+    def resetTimes():
+    
+        global light_start
+        global light_end
+        
+        light_start = time(hour=8, minute=0)
+        light_end = time(hour=22, minute=0)
+        cur_time.config(text = "on: " + light_start.isoformat() + " off: " + light_end.isoformat())
+        
+        start_v.set(light_start.isoformat())
+        off_v.set(light_end.isoformat())
+
+
     lp=Tk()
     lp.geometry("800x450")
     lp.title("Light Controls")
@@ -264,7 +284,7 @@ def lights():
     cur.config(font=ft1)
     cur.place(x=80, y=310)
     
-    timeon = "8:00"; timeoff = "22:00"
+    timeon = light_start.isoformat(); timeoff = light_end.isoformat()
     cur_time = Label(lp, text="on: " + timeon + " off: " + timeoff, bg='white')
     cur_time.config(font=ft1)
     cur_time.place(x=80, y=330)
@@ -277,7 +297,7 @@ def lights():
     set_time.config(font=ft1)
     set_time.place(x=390, y=160)
 
-    set_ex = Label(lp, text="Example: 6:00 - 22:00 ", bg='white')
+    set_ex = Label(lp, text="Example: 06:00 - 22:00 ", bg='white')
     set_ex.config(font=ft1)
     set_ex.place(x=390, y=190)
 
@@ -285,15 +305,22 @@ def lights():
     start_time.config(font=ft1)
     start_time.place(x=390, y=220)
 
-    start_e=Entry(lp,width=8, border=1)
+    start_v=StringVar()
+    
+    start_e=Entry(lp,width=8, border=1, textvariable=start_v)
     start_e.config(font=ft1)
     start_e.place(x=430,y=220)
 
     off_time = Label(lp, text="OFF:  ", bg='white')
     off_time.config(font=ft1)
     off_time.place(x=390, y=250)
+    
+    off_v=StringVar()
 
-    off_e=Entry(lp,width=8, border=1)
+    start_v.set(light_start.isoformat())
+    off_v.set(light_end.isoformat())
+
+    off_e=Entry(lp,width=8, border=1, textvariable=off_v)
     off_e.config(font=ft1)
     off_e.place(x=430,y=250)
 
@@ -308,11 +335,11 @@ def lights():
 
 
 
-    confirm_lpt = Button(lp, text="CONFIRM", width=7, height=1, fg="white", bg="green", border=0)
+    confirm_lpt = Button(lp, text="CONFIRM", width=7, height=1, fg="white", bg="green", border=0, command=setTimes)
     confirm_lpt.config(font=ft1)
     confirm_lpt.place(x=350,y=340)
 
-    reset_lpt = Button(lp, text="RESET", width=7, height=1, fg="white", bg="red", border=0)
+    reset_lpt = Button(lp, text="RESET", width=7, height=1, fg="white", bg="red", border=0, command=resetTimes)
     reset_lpt.config(font=ft1)
     reset_lpt.place(x=430,y=340)
 
