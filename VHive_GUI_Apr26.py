@@ -44,6 +44,10 @@ lights_power = OutputDevice(25, False)
 light_start = time(8)
 light_end = time(22)
 
+#function to toggle relay power
+def TogglePower(relay):
+    relay.toggle()
+
 def update(window):
 
     global lights_power
