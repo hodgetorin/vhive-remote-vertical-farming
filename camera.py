@@ -5,8 +5,8 @@ import pygame, sys
 from pygame.locals import *
 import pygame.camera
 
-width = 1920
-height = 1080
+width = 300
+height = 300
 
 #initialize pygame
 pygame.init()
@@ -18,14 +18,15 @@ cam.start()
 windowSurfaceObj = pygame.display.set_mode((width, height), 1, 16)
 pygame.display.set_caption('Camera')
 
-#take a picture
-image = cam.get_image()
-cam.stop()
+def getnewWebcam():
+    #take a picture
+    image = cam.get_image()
+    cam.stop()
 
-#display the picture
-catSurfaceObj = image
-windowSurfaceObj.blit(catSurfaceObj, (0,0))
-pygame.display.update()
+    #display the picture
+    catSurfaceObj = image
+    windowSurfaceObj.blit(catSurfaceObj, (0,0))
+    pygame.display.update()
 
-#save picture
-pygame.image.save(windowSurfaceObj, 'picture.jpg')
+    #save picture
+    pygame.image.save(windowSurfaceObj, 'picture.png')
