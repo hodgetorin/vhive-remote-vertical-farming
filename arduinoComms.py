@@ -32,19 +32,32 @@ def flush():
 def send(data):
     if connected:
         ser.write((data + "\n").encode("ascii"))
-        return data
+    print(data)
     
 def readLine():
+    line = "no connection"
     if connected:
-        return ser.readline().decode("ascii").rstrip()
+        line = ser.readline().decode("ascii").rstrip()
+    else:
+        #simulate time passing to read
+        time.sleep(1)
+    print(line)
+    return line
 
 def readLines(count):
-    if connected:
         lines = []
         for i in range(count):
-            lines.append(ser.readline().decode("ascii").rstrip())
-            print(lines[i])
+            lines.append(readLine())
         return lines
+        
+def readToLine(condition):
+    lines = []
+    line = readLine()
+    lines.append(line)
+    while(line != condition and connected):
+        line = readLine()
+        lines.append(line)
+    return lines
 
 # ACM0 is the serial device name
 # 9600 is baud rate, which matches baud rate set in Arduino

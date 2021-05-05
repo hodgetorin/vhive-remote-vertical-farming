@@ -24,6 +24,9 @@ import relay
 import arduinoComms
 from board import Board
 
+import threading
+import ctypes
+
 # data packages for Sensors page:
 import numpy as np
 import pandas as pd
@@ -45,6 +48,36 @@ ft2 = ('consolas', 18)
     
 light_start = time(18)
 light_end = time(8)
+
+motorThread = None
+
+def runOnThread(callback):
+    #return lambda : threading.Thread(target=callback, daemon=True).start()
+    def _():
+        global motorThread
+        if (motorThread == None or not motorThread.is_alive()):
+            motorThread = threading.Thread(target=callback)
+            motorThread.start()
+        else:
+            print("please wait for previous command to finish!")
+    return _
+
+# I have no idea how this black magic works, but it *should* work
+def _async_raise(tid, exctype):
+    '''Raises an exception in the threads with id tid'''
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid),
+                                                     ctypes.py_object(exctype))
+    if res == 0:
+        raise ValueError("invalid thread id")
+    elif res != 1:
+        # "if it returns a number greater than one, you're in trouble,
+        # and you should call it again with exc=NULL to revert the effect"
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), None)
+        raise SystemError("PyThreadState_SetAsyncExc failed")
+        
+def killMotorThread():
+    global motorThread
+    _async_raise(motorThread.native_id, SystemExit)
 
 def update(window):
 
@@ -458,17 +491,18 @@ def boards():
         messagebox.showinfo("Directions:", "Select the board you wish to move, then change dx to the desired lateral distance in inches. Negative dx moves the board to the left and positive dx moves the board to the right.")
     
     def sendStop():
+        killMotorThread()
         arduinoComms.send("s")
 
     def sendExtend():
         global extended
         arduinoComms.flush()
-        print(arduinoComms.send("r "+str(boardList[boardSelect].pos)+" 2000"))
-        print(arduinoComms.readLine())
-        print(arduinoComms.readLine())
-        print(arduinoComms.send("h" if extended else "f25"))
-        print(arduinoComms.readLine())
-        print(arduinoComms.readLine())
+        arduinoComms.send("r "+str(boardList[boardSelect].pos)+" 2000")
+        arduinoComms.readLine()
+        arduinoComms.readLine()
+        arduinoComms.send("f0" if extended else "f25")
+        arduinoComms.readLine()
+        arduinoComms.readLine()
         dz_bt.config(text="R E T R A C T" if extended else "E X T E N D")
         extended = not extended
         
@@ -510,42 +544,35 @@ def boards():
         arduinoComms.send("f5")
         arduinoComms.readLines(2)
         arduinoComms.send("p")
-        print(arduinoComms.readLine())
+        arduinoComms.readLine()
         boardList[0].pos = -float(arduinoComms.readLine())
         boardList[1].pos = -float(arduinoComms.readLine())
         boardList[2].pos = -float(arduinoComms.readLine())
-        print(arduinoComms.readLine())
+        arduinoComms.readLine()
         arduinoComms.send("r0")
-        print(arduinoComms.readLine())
-        print(arduinoComms.readLine())
+        arduinoComms.readLines(2)
         arduinoComms.send("h")
         arduinoComms.readLines(2)
         
     def moveBoard():
         arduinoComms.flush()
-        print(arduinoComms.send("f5"))
-        print(arduinoComms.readLine())
-        print(arduinoComms.readLine())
-        print(arduinoComms.send("r"+"%.2f" % (boardList[boardSelect].pos-3)))
-        print(arduinoComms.readLine())
-        print(arduinoComms.readLine())
-        print(arduinoComms.send("f0"))
-        print(arduinoComms.readLine())
-        print(arduinoComms.readLine())
-        print(arduinoComms.send("R3.5 300"))
-        print(arduinoComms.readLine())
-        print(arduinoComms.readLine())
+        arduinoComms.send("f5")
+        arduinoComms.readLines(2)
+        arduinoComms.send("r"+"%.2f" % (boardList[boardSelect].pos-3))
+        arduinoComms.readLines(2)
+        arduinoComms.send("f0")
+        arduinoComms.readLines(2)
+        arduinoComms.send("R3.5 300")
+        arduinoComms.readLines(2)
         arduinoComms.send("F5")
         arduinoComms.readLines(2)
-        print(arduinoComms.send("R"+str(dx-.5)))
-        print(arduinoComms.readLine())
-        print(arduinoComms.readLine())
+        arduinoComms.send("R"+str(dx-.5))
+        arduinoComms.readLines(2)
         arduinoComms.send("B5")
         arduinoComms.readLines(2)
         relay.TogglePower(relay.solenoid)
-        print(arduinoComms.send("F1"))
-        print(arduinoComms.readLine())
-        print(arduinoComms.readLine())
+        arduinoComms.send("F1")
+        arduinoComms.readLines(2)
         relay.TogglePower(relay.solenoid)
         arduinoComms.send("f5")
         arduinoComms.readLines(2)
@@ -606,7 +633,7 @@ def boards():
     selected_pos.place(x=140, y=310)
     
     # dz and dx hold integer values of inches
-    dz_bt = Button(bp, text="E X T E N D", width=12, height=2, fg="white", bg="#f26d83", border=0, command=sendExtend)
+    dz_bt = Button(bp, text="E X T E N D", width=12, height=2, fg="white", bg="#f26d83", border=0, command=runOnThread(sendExtend))
     dz_bt.place(x=240, y=340)
     # on click: change button text to "R E T R A C T"
 
@@ -622,19 +649,19 @@ def boards():
     dx_dn_bt.config(font=ft1)
     dx_dn_bt.place(x=550,y=275)
 
-    scan_bt = Button(bp, text="SCAN", width=7, height=1, fg="white", bg="#f26d83", border=0, command=sendScan)
+    scan_bt = Button(bp, text="SCAN", width=7, height=1, fg="white", bg="#f26d83", border=0, command=runOnThread(sendScan))
     scan_bt.config(font=ft1)
     scan_bt.place(x=640,y=135)
 
-    confirm_bt = Button(bp, text="CONFIRM", width=7, height=1, fg="white", bg="#f26d83", border=0, command=moveBoard)
+    confirm_bt = Button(bp, text="CONFIRM", width=7, height=1, fg="white", bg="#f26d83", border=0, command=runOnThread(moveBoard))
     confirm_bt.config(font=ft1)
     confirm_bt.place(x=640,y=205)
 
-    reset_bt = Button(bp, text="ZERO", width=7, height=1, fg="white", bg="#f26d83", border=0, command=sendZero)
+    reset_bt = Button(bp, text="ZERO", width=7, height=1, fg="white", bg="#f26d83", border=0, command=runOnThread(sendZero))
     reset_bt.config(font=ft1)
     reset_bt.place(x=640,y=275)
 
-    home_bt = Button(bp, text="H O M E", width=10, height=2, fg="white", bg="#5b9aa0", border=0, command = homeBP)
+    home_bt = Button(bp, text="H O M E", width=10, height=2, fg="white", bg="#5b9aa0", border=0, command=homeBP)
     home_bt.config(font=ft1)
     home_bt.place(x=640,y=330)
    
@@ -797,13 +824,13 @@ def login():
 def initialize():
     arduinoComms.flush()
     arduinoComms.send("i")
-    while (arduinoComms.readLine() != "Limits Found"):
-        pass
+    arduinoComms.readToLine("Limits Found")
     arduinoComms.send("f5")
     arduinoComms.readLines(2)
     arduinoComms.send("r0")
     arduinoComms.readLines(2)
     arduinoComms.send("h")
+    arduinoComms.readLines(2)
     
 def initcnc():
     window = Tk()
